@@ -28,6 +28,12 @@ app_license = "MIT"
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
+# monkey patch
+import erpnext.accounts.general_ledger
+import bs_reconcile.overrides.general_ledger
+
+erpnext.accounts.general_ledger.set_as_cancel = bs_reconcile.overrides.general_ledger.set_as_cancel
+
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -94,21 +100,19 @@ app_license = "MIT"
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-#	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+    "Payment Reconciliation": "bs_reconcile.overrides.payment_reconciliation.BSPaymentReconciliation",
+}
 
 # Document Events
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-#	"*": {
-#		"on_update": "method",
-#		"on_cancel": "method",
-#		"on_trash": "method"
-#	}
-# }
+doc_events = {
+    "GL Entry": {
+        "after_insert": "bs_reconcile.overrides.gl_entry.bs_reconcile",
+    },
+}
 
 # Scheduled Tasks
 # ---------------
