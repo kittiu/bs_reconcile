@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include bs_reconcile *.css
+recursive-include bs_reconcile *.csv
+recursive-include bs_reconcile *.html
+recursive-include bs_reconcile *.ico
+recursive-include bs_reconcile *.js
+recursive-include bs_reconcile *.json
+recursive-include bs_reconcile *.md
+recursive-include bs_reconcile *.png
+recursive-include bs_reconcile *.py
+recursive-include bs_reconcile *.svg
+recursive-include bs_reconcile *.txt
+recursive-exclude bs_reconcile *.pyc
