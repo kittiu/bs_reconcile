@@ -1,0 +1,108 @@
+{
+ "actions": [],
+ "creation": "2023-06-20 15:48:34.859701",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "posting_date",
+  "voucher_type",
+  "voucher_no",
+  "against",
+  "against_voucher_type",
+  "against_voucher_no",
+  "remarks",
+  "residual_debit",
+  "residual_credit",
+  "gl_entry"
+ ],
+ "fields": [
+  {
+   "fieldname": "voucher_type",
+   "fieldtype": "Link",
+   "label": "Voucher Type",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "voucher_no",
+   "fieldtype": "Dynamic Link",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Voucher No",
+   "options": "voucher_type",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "residual_debit",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Open Debit",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "residual_credit",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Open Credit",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "gl_entry",
+   "fieldtype": "Link",
+   "label": "GL Entry",
+   "options": "GL Entry",
+   "reqd": 1
+  },
+  {
+   "fieldname": "against_voucher_type",
+   "fieldtype": "Link",
+   "label": "Against Voucher Type",
+   "options": "DocType"
+  },
+  {
+   "columns": 1,
+   "fieldname": "against_voucher_no",
+   "fieldtype": "Dynamic Link",
+   "label": "Against Voucher No",
+   "options": "against_voucher_type"
+  },
+  {
+   "columns": 2,
+   "fieldname": "remarks",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "against",
+   "fieldtype": "Text",
+   "in_list_view": 1,
+   "label": "Against"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2023-06-20 17:17:15.481181",
+ "modified_by": "Administrator",
+ "module": "Balance Sheet Reconciliation",
+ "name": "Balance Sheet Reconciliation Entries",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

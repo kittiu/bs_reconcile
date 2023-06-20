@@ -1,0 +1,97 @@
+{
+ "actions": [],
+ "allow_copy": 1,
+ "creation": "2023-06-20 10:30:23.234418",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "column_break_q20yy",
+  "is_reconcile_account",
+  "filters_section",
+  "voucher_type",
+  "unreconciled_entries_section",
+  "open_gl_entries"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "is_reconcile_account",
+   "fieldtype": "Link",
+   "label": "Reconcile Account",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_q20yy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.is_reconcile_account",
+   "fieldname": "filters_section",
+   "fieldtype": "Section Break",
+   "label": "Filters"
+  },
+  {
+   "fieldname": "voucher_type",
+   "fieldtype": "Link",
+   "label": "Voucher Type",
+   "options": "DocType"
+  },
+  {
+   "description": "If you need to reconcile particular transactions against each other, then please select accordingly. If not, all the transactions will be allocated in FIFO order.",
+   "fieldname": "unreconciled_entries_section",
+   "fieldtype": "Section Break",
+   "label": "Unreconciled Entries"
+  },
+  {
+   "fieldname": "open_gl_entries",
+   "fieldtype": "Table",
+   "label": "Open GL Entries",
+   "options": "Balance Sheet Reconciliation Entries"
+  }
+ ],
+ "hide_toolbar": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2023-06-20 16:00:07.050577",
+ "modified_by": "Administrator",
+ "module": "Balance Sheet Reconciliation",
+ "name": "Balance Sheet Reconciliation",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Accounts Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Accounts User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

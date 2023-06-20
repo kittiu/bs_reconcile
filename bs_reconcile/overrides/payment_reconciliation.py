@@ -7,7 +7,7 @@ class BSPaymentReconciliation(PaymentReconciliation):
 	
     @frappe.whitelist()
     def reconcile(self):
-        super(self).reconcile()
+        super(BSPaymentReconciliation, self).reconcile()
         # Patch reconcile
         for a in self.allocation:
             gl_entries = get_gl_entries_by_vouchers([a.reference_name, a.invoice_number])

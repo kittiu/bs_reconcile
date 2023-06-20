@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "autoname": "format:P{#}",
  "creation": "2023-06-19 08:45:39.848560",
  "default_view": "List",
  "doctype": "DocType",
@@ -8,8 +9,13 @@
  "field_order": [
   "debit_gl_entry",
   "credit_gl_entry",
-  "amount",
-  "full_reconcile_number"
+  "column_break_b78vv",
+  "debit_voucher",
+  "credit_voucher",
+  "section_break_26pyb",
+  "full_reconcile_number",
+  "column_break_xs7qq",
+  "amount"
  ],
  "fields": [
   {
@@ -27,7 +33,7 @@
   {
    "fieldname": "amount",
    "fieldtype": "Currency",
-   "label": "Amount",
+   "label": "Amount Reconciled",
    "options": "Company:company:default_currency"
   },
   {
@@ -35,14 +41,39 @@
    "fieldtype": "Link",
    "label": "Full Reconcile Number",
    "options": "Full Reconcile Number"
+  },
+  {
+   "fieldname": "column_break_b78vv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "debit_gl_entry.voucher_no",
+   "fieldname": "debit_voucher",
+   "fieldtype": "Data",
+   "label": "Debit Voucher"
+  },
+  {
+   "fetch_from": "credit_gl_entry.voucher_no",
+   "fieldname": "credit_voucher",
+   "fieldtype": "Data",
+   "label": "Credit Voucher"
+  },
+  {
+   "fieldname": "section_break_26pyb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_xs7qq",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-06-19 08:47:08.362867",
+ "modified": "2023-06-20 10:20:45.031681",
  "modified_by": "Administrator",
  "module": "Balance Sheet Reconciliation",
  "name": "Partial Reconcile Entry",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
