@@ -6,7 +6,7 @@ frappe.ui.form.on('GL Entry', {
                 method: 'bs_reconcile.overrides.gl_entry.update_bs_reconcile_data',
                 freeze: true,
                 args: {
-                    'gl_to_update': [{'name': frm.docname}]
+                    'gls': [{'name': frm.docname}]
                 }
             });
         })
