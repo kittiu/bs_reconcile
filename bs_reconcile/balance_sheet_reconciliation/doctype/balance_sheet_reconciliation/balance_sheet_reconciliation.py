@@ -26,9 +26,16 @@ class BalanceSheetReconciliation(Document):
 				"account": self.is_reconcile_account,
 				"is_cancelled": 0,
 				"is_reconcile": 1,
-				"full_reconcile_number": "",				
+				"full_reconcile_number": "",
 			}
 		)
+
+		if self.voucher_no:
+			open_gl_entries = list(filter(
+				lambda x: self.voucher_no in (x.get("voucher_no") is None and "" or x.get("voucher_no")) or
+				x["against_voucher"] is not None and self.voucher_no in x["against_voucher"],
+				open_gl_entries
+			))
 
 		open_gl_entries = sorted(
 			open_gl_entries, key=lambda k: k["posting_date"] or getdate(nowdate())
@@ -59,10 +66,18 @@ class BalanceSheetReconciliation(Document):
 				"gl_entry": gl.name,
 			})
 
-
 	@frappe.whitelist()
 	def reconcile(self, args):
-		gl_ids = [x["gl_entry"] for x in args.get("gl_entries")]
+		selected_gl = args.get("gl_entries")
+		if not len(selected_gl):
+			msgprint(_("You have not select any record"))
+			return
+		debit = sum([x["residual_debit"] for x in selected_gl])
+		credit = sum([x["residual_credit"] for x in selected_gl])
+		if debit != credit:
+			msgprint(_("Please make sure that open debit is equal to open credit"))
+			return
+		gl_ids = [x["gl_entry"] for x in selected_gl]
 		gl_entries = frappe.get_all(
 			"GL Entry",
 			fields=["*"],

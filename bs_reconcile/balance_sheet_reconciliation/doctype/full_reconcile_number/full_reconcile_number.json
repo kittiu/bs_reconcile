@@ -18,8 +18,13 @@
   }
  ],
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2023-06-19 08:46:48.252300",
+ "links": [
+  {
+   "link_doctype": "GL Entry",
+   "link_fieldname": "full_reconcile_number"
+  }
+ ],
+ "modified": "2023-06-20 22:27:48.508869",
  "modified_by": "Administrator",
  "module": "Balance Sheet Reconciliation",
  "name": "Full Reconcile Number",

@@ -2,13 +2,21 @@ import frappe
 from frappe import _, qb
 from frappe.query_builder.functions import Sum
 
-# New Reconcile Mechanism, proposed by Kitti U.
+
 def create_partial_reconcile_entries(debit_entries, credit_entries, allocated_amount=False):
+	
+	def _delete_pre(debit_gl_entry, credit_gl_entry):
+		pre = qb.DocType("Partial Reconcile Entry")
+		qb.from_(pre).delete().where(
+			(pre.debit_gl_entry == debit_gl_entry) & (pre.credit_gl_entry == credit_gl_entry)
+		).run()
+	
 	if allocated_amount: # From payment allocation
 		if len(debit_entries + credit_entries) != 2:
 			frappe.throw(_("Allocated amount is not allowed when reconcile more than 2 GL Entries"))
 	for dr in debit_entries:
 		for cr in credit_entries:
+			_delete_pre(dr.name, cr.name)  # delete if exists
 			amount = min(dr.debit, cr.credit, allocated_amount) if allocated_amount else min(dr.debit, cr.credit) 
 			pre = frappe.get_doc(
 				dict(
@@ -18,7 +26,7 @@ def create_partial_reconcile_entries(debit_entries, credit_entries, allocated_am
 					amount=amount
 				)
 			)
-			pre.insert()
+			pre.insert(ignore_permissions=True)
 
 def get_all_related_gl_entries(gl_list):
 	prev_gl_list = gl_list.copy()
@@ -99,41 +107,55 @@ def reconcile_gl_entries(gl_entries, allocated_amount=False):
 	reconcile_gl(gl_entries, allocated_amount=allocated_amount)
 
 def reconcile_gl(gl_to_reconcile, allocated_amount=False):
-	debit_entries = list(filter(lambda x: x.get("debit"), gl_to_reconcile))
-	credit_entries = list(filter(lambda x: x.get("credit"), gl_to_reconcile))
-	if len(debit_entries) > 1 and len(credit_entries) > 1:
-		frappe.throw(_("Reconcile process only allow either 1 credit or debit entry"))
-	# Create partial reconcile entry for each dr/cr pair
-	create_partial_reconcile_entries(debit_entries, credit_entries, allocated_amount)
-	# Update residual for all gl entries
-	for gl in gl_to_reconcile:
-		update_gl_residual(gl)
-	# Mark a Full Reconcile Number when all residual reach zero
-	if set([x.residual for x in gl_to_reconcile]) == {0}:
-		mark_full_reconcile(gl_to_reconcile)
+	accounts = list(set([x.account for x in gl_to_reconcile]))
+	for a in accounts:
+		debit_entries = list(filter(lambda x: x.debit and x.account == a, gl_to_reconcile))
+		credit_entries = list(filter(lambda x: x.credit and x.account == a, gl_to_reconcile))
+		if len(debit_entries) > 1 and len(credit_entries) > 1:
+			frappe.throw(_("Reconcile process only allow either 1 credit or debit entry"))
+		# Create partial reconcile entry for each dr/cr pair
+		create_partial_reconcile_entries(debit_entries, credit_entries, allocated_amount)
+		# Update residual for all gl entries
+		for gl in gl_to_reconcile:
+			update_gl_residual(gl)
+		# Mark a Full Reconcile Number when all residual reach zero
+		if set([x.residual for x in gl_to_reconcile]) == {0}:
+			mark_full_reconcile(gl_to_reconcile)
 
 def unreconcile_gl(gl_to_unreconcile):
 	# remove full reconcile number everywhere
 	gl_list = [x["name"] for x in gl_to_unreconcile]
 	gl_list, pre_list = get_all_related_gl_entries(gl_list)
-	for gl in gl_list:
-		frappe.db.set_value("GL Entry", gl, "full_reconcile_number", None)
-	for pre in pre_list:
-		frappe.db.set_value("Partial Reconcile Entry", pre, "full_reconcile_number", None)
-	# Set amount in parital reconcile entry to zero
+	# Unset full_reconcile_number for GL Entry and Partial Reconcile Entry
+	if gl_list:
+		tab = qb.DocType("GL Entry")
+		qb.update(tab).set(tab.full_reconcile_number, None).where(
+			(tab.name.isin(gl_list))
+		).run()
+	if pre_list:
+		tab = qb.DocType("Partial Reconcile Entry")
+		qb.update(tab).set(tab.full_reconcile_number, None).where(
+			(tab.name.isin(pre_list))
+		).run()
+
+	# Delete related partial reconcie entries
 	gl_list = [x.name for x in gl_to_unreconcile]
-	pre_list = frappe.db.get_all(
+	pre_list = frappe.get_all(
 		"Partial Reconcile Entry",
 		fields=["*"],
 		filters=[dict(debit_gl_entry=("in", gl_list))],
 	)
-	pre_list += frappe.db.get_all(
+	pre_list += frappe.get_all(
 		"Partial Reconcile Entry",
 		fields=["*"],
 		filters=[dict(credit_gl_entry=("in", gl_list))],
 	)
-	for pre in pre_list:
-		frappe.db.set_value("Partial Reconcile Entry", pre.name, "amount", 0)
+	if pre_list:
+		tab = qb.DocType("Partial Reconcile Entry")
+		qb.from_(tab).delete().where(
+			tab.name.isin([x.name for x in pre_list])
+		).run()
+	# Finally, update the gl residual again
 	for pre in pre_list:
 		update_gl_residual(frappe.get_doc("GL Entry", pre.debit_gl_entry))
 		update_gl_residual(frappe.get_doc("GL Entry", pre.credit_gl_entry))
@@ -156,7 +178,7 @@ def update_gl_residual(gl):
 		qb.from_(pre).select((Sum(pre.amount)).as_("total_credit"))
 		.where((pre.credit_gl_entry == gl.name)).run()
 	)
-	reonciled_amount = (debit[0][0] or 0) - (credit[0][0] or 0)
+	reconciled_amount = (debit[0][0] or 0) - (credit[0][0] or 0)
 	# Update Residual
-	gl.residual = gl_amount - reonciled_amount
+	gl.residual = gl_amount - reconciled_amount
 	frappe.db.set_value("GL Entry", gl.name, "residual", gl.residual)

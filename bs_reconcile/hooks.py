@@ -35,8 +35,8 @@ import bs_reconcile.overrides.general_ledger
 erpnext.accounts.general_ledger.set_as_cancel = bs_reconcile.overrides.general_ledger.set_as_cancel
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
+doctype_js = {"GL Entry" : "public/js/gl_entry.js"}
+doctype_list_js = {"GL Entry" : "public/js/gl_entry_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 

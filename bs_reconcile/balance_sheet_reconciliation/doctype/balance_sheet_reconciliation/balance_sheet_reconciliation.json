@@ -11,7 +11,7 @@
   "column_break_q20yy",
   "is_reconcile_account",
   "filters_section",
-  "voucher_type",
+  "voucher_no",
   "unreconciled_entries_section",
   "open_gl_entries"
  ],
@@ -42,13 +42,8 @@
    "label": "Filters"
   },
   {
-   "fieldname": "voucher_type",
-   "fieldtype": "Link",
-   "label": "Voucher Type",
-   "options": "DocType"
-  },
-  {
-   "description": "If you need to reconcile particular transactions against each other, then please select accordingly. If not, all the transactions will be allocated in FIFO order.",
+   "depends_on": "eval:doc.is_reconcile_account",
+   "description": "Select debit and credit entries to reconcile. Make sure sum debit equals sum credit.",
    "fieldname": "unreconciled_entries_section",
    "fieldtype": "Section Break",
    "label": "Unreconciled Entries"
@@ -58,12 +53,17 @@
    "fieldtype": "Table",
    "label": "Open GL Entries",
    "options": "Balance Sheet Reconciliation Entries"
+  },
+  {
+   "fieldname": "voucher_no",
+   "fieldtype": "Data",
+   "label": "Voucher / Against Voucher"
   }
  ],
  "hide_toolbar": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-06-20 16:00:07.050577",
+ "modified": "2023-06-21 17:18:19.752045",
  "modified_by": "Administrator",
  "module": "Balance Sheet Reconciliation",
  "name": "Balance Sheet Reconciliation",
