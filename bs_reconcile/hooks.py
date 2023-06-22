@@ -6,6 +6,27 @@ app_publisher = "FLO WORKS"
 app_description = "Allow reconcile all balance sheet gl entry"
 app_email = "kittiu@flo-works.co"
 app_license = "MIT"
+required_apps = ["erpnext"]
+
+fixtures = [
+    {
+        "doctype": "Custom Field",
+        "filters": [
+            [
+                "name",
+                "in",
+                (
+                    "Account-is_reconcile",
+                    "GL Entry-full_reconcile_number",
+                    "GL Entry-residual",
+                    "GL Entry-is_reconcile",
+                    "GL Entry-section_break_qneej",
+                )
+            ]
+        ]
+    }
+]
+
 
 # Includes in <head>
 # ------------------

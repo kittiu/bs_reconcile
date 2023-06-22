@@ -145,11 +145,7 @@ def unreconcile_gl(gl_to_unreconcile):
 		"Partial Reconcile Entry",
 		fields=["*"],
 		filters=[dict(debit_gl_entry=("in", gl_list))],
-	)
-	pre_list += frappe.get_all(
-		"Partial Reconcile Entry",
-		fields=["*"],
-		filters=[dict(credit_gl_entry=("in", gl_list))],
+		or_filters=[dict(credit_gl_entry=("in", gl_list))],
 	)
 	if pre_list:
 		tab = qb.DocType("Partial Reconcile Entry")
