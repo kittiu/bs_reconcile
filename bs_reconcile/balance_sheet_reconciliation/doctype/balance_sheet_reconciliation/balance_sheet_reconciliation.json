@@ -12,6 +12,8 @@
   "is_reconcile_account",
   "filters_section",
   "voucher_no",
+  "column_break_ve8vf",
+  "open_amount",
   "unreconciled_entries_section",
   "open_gl_entries"
  ],
@@ -58,12 +60,21 @@
    "fieldname": "voucher_no",
    "fieldtype": "Data",
    "label": "Voucher / Against Voucher"
+  },
+  {
+   "fieldname": "open_amount",
+   "fieldtype": "Float",
+   "label": "Open Amount"
+  },
+  {
+   "fieldname": "column_break_ve8vf",
+   "fieldtype": "Column Break"
   }
  ],
  "hide_toolbar": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-06-21 17:18:19.752045",
+ "modified": "2023-06-22 22:08:50.548335",
  "modified_by": "Administrator",
  "module": "Balance Sheet Reconciliation",
  "name": "Balance Sheet Reconciliation",

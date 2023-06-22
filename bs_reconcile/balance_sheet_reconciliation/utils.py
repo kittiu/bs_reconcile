@@ -7,13 +7,10 @@ def create_partial_reconcile_entries(gl_entries, allocated_amount=False):
 	if allocated_amount: # From payment reconciliation
 		if len(gl_entries) > 2:
 			frappe.throw(_("Allocated amount is not allowed when reconcile more than 2 GL Entries"))
+	for gl in gl_entries:
+		update_gl_residual(gl)
 	debit_entries = list(filter(lambda x: x.debit, gl_entries))
 	credit_entries = list(filter(lambda x: x.credit, gl_entries))
-	# Case cannot reconcile, still update residual
-	if not debit_entries or not credit_entries:
-		for gl in gl_entries:
-			update_gl_residual(gl)
-		return
 	for dr in debit_entries:
 		for cr in credit_entries:
 			# Delete pre if already exists
@@ -96,19 +93,14 @@ def reconcile_gl_entries(gl_entries, allocated_amount=False):
 		lambda x: x.get("against_voucher") and x.get("against_voucher") != x.get("voucher_no"),
 		gl_entries
 	))
-	gl_entries == list(filter(
-		lambda x: not x.get("against_voucher") or x.get("against_voucher") == x.get("voucher_no"),
-		gl_entries
-	))
+	# gl_entries = list(set(gl_entries).difference(set(gl_clearer)))
+	gl_entries = list([x for x in gl_entries if x not in gl_clearer])
 	for glc in gl_clearer:
 		gl_clearee = list(filter(
 			lambda x: x.get("voucher_no") == glc.get("against_voucher"),
 			gl_entries
 		))
-		gl_entries = list(filter(
-			lambda x: x.get("voucher_no") != glc.get("against_voucher"),
-			gl_entries
-		))
+		gl_entries = list([x for x in gl_entries if x not in gl_clearee])
 		gl_to_reconcile = [glc] + gl_clearee
 		reconcile_gl(gl_to_reconcile, allocated_amount=allocated_amount)
 	# other gl w/o against voucher, just reconcile as a single group

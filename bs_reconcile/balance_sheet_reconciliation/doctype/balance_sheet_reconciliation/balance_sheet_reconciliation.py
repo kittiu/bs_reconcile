@@ -9,11 +9,6 @@ from ...utils import reconcile_gl_entries
 
 
 class BalanceSheetReconciliation(Document):
-	def __init__(self, *args, **kwargs):
-		super(BalanceSheetReconciliation, self).__init__(*args, **kwargs)
-		# self.common_filter_conditions = []
-		# self.accounting_dimension_filter_conditions = []
-		# self.ple_posting_date_filter = []
 
 	@frappe.whitelist()
 	def get_unreconciled_entries(self):
@@ -29,12 +24,22 @@ class BalanceSheetReconciliation(Document):
 				"full_reconcile_number": "",
 			}
 		)
+		all_entries = open_gl_entries.copy()
+		
+		if self.voucher_no or self.open_amount:
+			open_gl_entries = []
 
 		if self.voucher_no:
-			open_gl_entries = list(filter(
+			open_gl_entries += list(filter(
 				lambda x: self.voucher_no in (x.get("voucher_no") is None and "" or x.get("voucher_no")) or
 				x["against_voucher"] is not None and self.voucher_no in x["against_voucher"],
-				open_gl_entries
+				all_entries
+			))
+
+		if self.open_amount:
+			open_gl_entries += list(filter(
+				lambda x: abs(x["residual"]) == self.open_amount or abs(x["residual"]) == self.open_amount,
+				all_entries
 			))
 
 		open_gl_entries = sorted(
