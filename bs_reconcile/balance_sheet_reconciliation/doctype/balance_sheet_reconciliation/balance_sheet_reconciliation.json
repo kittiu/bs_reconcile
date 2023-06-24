@@ -15,6 +15,10 @@
   "column_break_ve8vf",
   "open_amount",
   "unreconciled_entries_section",
+  "sum_debit",
+  "column_break_t2qcv",
+  "sum_credit",
+  "section_break_nknvg",
   "open_gl_entries"
  ],
  "fields": [
@@ -69,12 +73,30 @@
   {
    "fieldname": "column_break_ve8vf",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_t2qcv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_nknvg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "sum_debit",
+   "fieldtype": "Float",
+   "label": "Sum Debit"
+  },
+  {
+   "fieldname": "sum_credit",
+   "fieldtype": "Float",
+   "label": "Sum Credit"
   }
  ],
  "hide_toolbar": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-06-22 22:08:50.548335",
+ "modified": "2023-06-25 00:39:16.100313",
  "modified_by": "Administrator",
  "module": "Balance Sheet Reconciliation",
  "name": "Balance Sheet Reconciliation",

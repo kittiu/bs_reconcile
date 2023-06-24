@@ -1,84 +1,91 @@
 // Copyright (c) 2023, FLO WORKS and contributors
 // For license information, please see license.txt
-frappe.provide("bs_reconcile");
-bs_reconcile.BSReconcileController = class BSReconcileController extends frappe.ui.form.Controller {
+frappe.ui.form.on('Balance Sheet Reconciliation', {
 
-	onload() {
+	onload(frm) {
 		const default_company = frappe.defaults.get_default('company');
-		this.frm.set_value('company', default_company);
-		this.frm.set_value('is_reconcile_account', '');
+		frm.set_value('company', default_company);
+		frm.set_value('is_reconcile_account', '');
 
-		this.frm.set_query("is_reconcile_account", () => {
+		frm.set_query("is_reconcile_account", () => {
 			return {
 				"filters": {
 					"is_reconcile": true,
 				}
 			}
 		});
-	}
+	},
 
-	refresh() {
-		this.frm.disable_save();
+	refresh(frm) {
+		frm.disable_save();
 
-		this.frm.set_df_property('open_gl_entries', 'cannot_delete_rows', true);
-		this.frm.set_df_property('open_gl_entries', 'cannot_add_rows', true);
+		frm.set_df_property('open_gl_entries', 'cannot_delete_rows', true);
+		frm.set_df_property('open_gl_entries', 'cannot_add_rows', true);
 
-		if (this.frm.doc.is_reconcile_account) {
-			this.frm.add_custom_button(__('Get Unreconciled Entries'), () =>
-				this.frm.trigger("get_unreconciled_entries")
+		if (frm.doc.is_reconcile_account) {
+			frm.add_custom_button(__('Get Unreconciled Entries'), () =>
+				frm.trigger("get_unreconciled_entries")
 			);
-			this.frm.change_custom_button_type('Get Unreconciled Entries', null, 'primary');
+			frm.change_custom_button_type('Get Unreconciled Entries', null, 'primary');
 		}
 
-		if (this.frm.doc.open_gl_entries.length) {
-			this.frm.add_custom_button(__('Reconcile'), () =>
-				this.frm.trigger("reconcile_gl_entries")
+		if (frm.doc.open_gl_entries.length) {
+			frm.add_custom_button(__('Reconcile'), () =>
+				frm.trigger("reconcile_gl_entries")
 			);
-			this.frm.change_custom_button_type('Reconcile', null, 'primary');
-			this.frm.change_custom_button_type('Get Unreconciled Entries', null, 'default');
+			frm.change_custom_button_type('Reconcile', null, 'primary');
+			frm.change_custom_button_type('Get Unreconciled Entries', null, 'default');
 		}
-	}
 
-	company() {
-		this.frm.set_value('is_reconcile_account', '');
-	}
+        frm.fields_dict.open_gl_entries.grid.wrapper.on('click', '.grid-row', function(event) {
+			let gl_entries = frm.fields_dict.open_gl_entries.grid.get_selected_children()
+			const sum_debit = gl_entries.reduce((accumulator, object) => {
+				return accumulator + object.residual_debit;
+			}, 0);
+			const sum_credit = gl_entries.reduce((accumulator, object) => {
+				return accumulator + object.residual_credit;
+			}, 0);
+			frm.set_value('sum_debit', sum_debit);
+			frm.set_value('sum_credit', sum_credit);
+		});
+	},
 
-	is_reconcile_account() {
-		this.frm.trigger("clear_child_tables");
-		this.frm.refresh();
-	}
+	company(frm) {
+		frm.set_value('is_reconcile_account', '');
+	},
 
-	get_unreconciled_entries() {
-		return this.frm.call({
-			doc: this.frm.doc,
+	is_reconcile_account(frm) {
+		frm.trigger("clear_child_tables");
+		frm.refresh();
+	},
+
+	get_unreconciled_entries(frm) {
+		return frm.call({
+			doc: frm.doc,
 			method: 'get_unreconciled_entries',
 			callback: () => {
-				this.frm.refresh();
+				frm.refresh();
 			}
 		});
+	},
 
-	}
+	clear_child_tables(frm) {
+		frm.clear_table("open_gl_entries");
+		frm.refresh_fields();
+	},
 
-	clear_child_tables() {
-		this.frm.clear_table("open_gl_entries");
-		this.frm.refresh_fields();
-	}
-
-	reconcile_gl_entries() {
-		let gl_entries = this.frm.fields_dict.open_gl_entries.grid.get_selected_children();
-		return this.frm.call({
-			doc: this.frm.doc,
+	reconcile_gl_entries(frm) {
+		let gl_entries = frm.fields_dict.open_gl_entries.grid.get_selected_children();
+		return frm.call({
+			doc: frm.doc,
 			method: 'reconcile',
 			args: {
 				gl_entries: gl_entries
 			},
 			callback: () => {
-				this.frm.clear_table("open_gl_entries");
-				this.frm.trigger("get_unreconciled_entries")
+				frm.clear_table("open_gl_entries");
+				frm.trigger("get_unreconciled_entries")
 			}
 		});
-	}
-
-};
-
-extend_cscript(cur_frm.cscript, new bs_reconcile.BSReconcileController({frm: cur_frm}));
+	},
+})
