@@ -84,6 +84,10 @@ def mark_full_reconcile(gl_to_reconcile):
 			frappe.db.set_value("Partial Reconcile Entry", pre, "full_reconcile_number", fre.name)
 
 def reconcile_gl_entries(gl_entries, allocated_amount=False):
+	"""
+	Reconcile gl_entries, but first try to match voucher and against voucher first
+	If not matching, fall back to reconcile_gl()
+	"""
 	# Validation
 	for gl in gl_entries:
 		if not gl.is_reconcile:
@@ -107,6 +111,9 @@ def reconcile_gl_entries(gl_entries, allocated_amount=False):
 	reconcile_gl(gl_entries, allocated_amount=allocated_amount)
 
 def reconcile_gl(gl_to_reconcile, allocated_amount=False):
+	"""
+	Main method to reconcile any input gl entreis
+	"""
 	accounts = list(set([x.account for x in gl_to_reconcile]))
 	for a in accounts:
 		gl_entries = list(filter(lambda x: x.account == a, gl_to_reconcile))
