@@ -156,14 +156,15 @@ def unreconcile_gl(gl_to_unreconcile):
 		qb.update(tab).set(tab.full_reconcile_number, None).where(
 			tab.name.isin(pre_list)
 		).run()
-
-	# Delete related partial reconcie entries
+	# Delete related partial reconcile entries
 	gl_list = [x.name for x in gl_to_unreconcile]
 	pre_list = frappe.get_all(
 		"Partial Reconcile Entry",
 		fields=["*"],
-		filters=[dict(debit_gl_entry=("in", gl_list))],
-		or_filters=[dict(credit_gl_entry=("in", gl_list))],
+		or_filters=[
+			dict(debit_gl_entry=("in", gl_list)),
+			dict(credit_gl_entry=("in", gl_list)),
+		],
 	)
 	if pre_list:
 		tab = qb.DocType("Partial Reconcile Entry")

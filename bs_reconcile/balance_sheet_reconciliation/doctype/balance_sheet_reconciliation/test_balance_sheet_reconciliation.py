@@ -22,37 +22,28 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 
 	def test_simple_full_reconcile(self):
 		"""
-		Fulle reconcile simple 1 AR and 1 AP with equal amount = 100
+		Full reconcile simple 1 AR and 1 AP with equal amount = 100
 		"""
 		# Create PI with amount 100
 		pi = make_purchase_invoice(rate=100)
-		# Check GLE for Purchase Invoice
-		expected_gle = [
-			["_Test Account Cost for Goods Sold - _TC", 100, 0, 0, False],
-			["Creditors - _TC", 0, 100, -100, False],
-		]
-		check_gl_entries(self, pi, expected_gle)
+		residual, full_reconciled = get_reconcile_status(pi)
+		self.assertEqual(residual, -100)
+		self.assertEqual(full_reconciled, False)
 		# Create PE with amount 100
 		pe = make_payment_entry(amount=100)
-		expected_gle = [
-			["Cash - _TC", 0, 100, 0, False],
-			["Creditors - _TC", 100, 0, 100, False],
-		]
-		check_gl_entries(self, pe, expected_gle)
+		residual, full_reconciled = get_reconcile_status(pe)
+		self.assertEqual(residual, 100)
+		self.assertEqual(full_reconciled, False)
 		# Reconcile creditors
 		gl_entries = get_gl_entries_by_vouchers([pi.name, pe.name])
 		reconcile_gl_entries(gl_entries)
 		# Test that residuals become zero
-		expected_gle = [
-			["_Test Account Cost for Goods Sold - _TC", 100, 0, 0, False],
-			["Creditors - _TC", 0, 100, 0, True],
-		]
-		check_gl_entries(self, pi, expected_gle)
-		expected_gle = [
-			["Cash - _TC", 0, 100, 0, False],
-			["Creditors - _TC", 100, 0, 0, True],
-		]
-		check_gl_entries(self, pe, expected_gle)
+		residual, full_reconciled = get_reconcile_status(pi)
+		self.assertEqual(residual, 0)
+		self.assertEqual(full_reconciled, True)
+		residual, full_reconciled = get_reconcile_status(pe)
+		self.assertEqual(residual, 0)
+		self.assertEqual(full_reconciled, True)
 
 	def test_simple_partial_reconcile_to_full(self):
 		"""
@@ -65,31 +56,27 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 		# 1st Reconcile
 		gl_entries = get_gl_entries_by_vouchers([pi.name, pe.name])
 		reconcile_gl_entries(gl_entries)
-		expected_gle = [
-			["_Test Account Cost for Goods Sold - _TC", 100, 0, 0, False],
-			["Creditors - _TC", 0, 100, -60, False],
-		]
-		check_gl_entries(self, pi, expected_gle)
-		expected_gle = [
-			["Cash - _TC", 0, 40, 0, False],
-			["Creditors - _TC", 40, 0, 0, False],
-		]
-		check_gl_entries(self, pe, expected_gle)
+		# Test invoice status
+		residual, full_reconciled = get_reconcile_status(pi)
+		self.assertEqual(residual, -60)
+		self.assertEqual(full_reconciled, False)
+		# Test payment status
+		residual, full_reconciled = get_reconcile_status(pe)
+		self.assertEqual(residual, 0)
+		self.assertEqual(full_reconciled, False)
 		# Create PE with amount 60
 		pe = make_payment_entry(amount=60)
 		# 2nd Reconcile (Full)
 		gl_entries = get_gl_entries_by_vouchers([pi.name, pe.name])
 		reconcile_gl_entries(gl_entries)
-		expected_gle = [
-			["_Test Account Cost for Goods Sold - _TC", 100, 0, 0, False],
-			["Creditors - _TC", 0, 100, 0, True],
-		]
-		check_gl_entries(self, pi, expected_gle)
-		expected_gle = [
-			["Cash - _TC", 0, 60, 0, False],
-			["Creditors - _TC", 60, 0, 0, True],
-		]
-		check_gl_entries(self, pe, expected_gle)
+		# Test 2nd invoice status
+		residual, full_reconciled = get_reconcile_status(pi)
+		self.assertEqual(residual, 0)
+		self.assertEqual(full_reconciled, True)
+		# Test payment status
+		residual, full_reconciled = get_reconcile_status(pe)
+		self.assertEqual(residual, 0)
+		self.assertEqual(full_reconciled, True)
 
 	def test_complex_partial_to_full_reconcile(self):
 		"""
@@ -105,17 +92,100 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 			[pi_1.name, pi_2.name, pi_3.name, pi_4.name, pe_1.name, pe_2.name]
 		)
 		reconcile_gl_entries(gl_entries)
-		# Test with pi_3, and p2_2, both should have fully reconiled
-		expected_gle = [
-			["_Test Account Cost for Goods Sold - _TC", 10, 0, 0, False],
-			["Creditors - _TC", 0, 10, 0, True],
-		]
-		check_gl_entries(self, pi_3, expected_gle)
-		expected_gle = [
-			["Cash - _TC", 0, 90, 0, False],
-			["Creditors - _TC", 90, 0, 0, True],
-		]
-		check_gl_entries(self, pe_2, expected_gle)
+		# Test all documents should have fully reconiled
+		for doc in [pi_1, pi_2, pi_3, pe_1, pe_2]:
+			residual, full_reconciled = get_reconcile_status(doc)
+			self.assertEqual(residual, 0)
+			self.assertEqual(full_reconciled, True)
+
+	def test_auto_reconcile_invoice_payment(self):
+		"""
+		Auto reconcile if payment is done against invoice(s)
+		Test with 2 invoice and 1 payment
+		"""
+		pi_1 = make_purchase_invoice(rate=100)
+		pi_2 = make_purchase_invoice(rate=200)
+		pe = make_payment_entry(amount=300, do_not_submit=True)
+		pi_ref_1 = {
+			"reference_doctype": pi_1.doctype,
+			"reference_name": pi_1.name,
+			"allocated_amount": 100,
+		}
+		pi_ref_2 = {
+			"reference_doctype": pi_2.doctype,
+			"reference_name": pi_2.name,
+			"allocated_amount": 200,
+		}
+		pe.append("references", pi_ref_1)
+		pe.append("references", pi_ref_2)
+		pe.save()
+		pe.submit()
+		# Test all documents should have fully reconiled
+		for doc in [pi_1, pi_2, pe]:
+			residual, full_reconciled = get_reconcile_status(doc)
+			self.assertEqual(residual, 0)
+			self.assertEqual(full_reconciled, True)
+
+	def test_cancel_voucher_to_unreconcile(self):
+		"""
+		Auto reconcile if payment is done against invoice(s)
+		Test with 2 invoice and 1 payment
+		"""
+		pi = make_purchase_invoice(rate=100)
+		pe = make_payment_entry(amount=100, do_not_submit=True)
+		pi_ref = {
+			"reference_doctype": pi.doctype,
+			"reference_name": pi.name,
+			"allocated_amount": 100,
+		}
+		pe.append("references", pi_ref)
+		pe.save()
+		pe.submit()
+		# Test all documents should have fully reconiled
+		for doc in [pi, pe]:
+			residual, full_reconciled = get_reconcile_status(doc)
+			self.assertEqual(residual, 0)
+			self.assertEqual(full_reconciled, True)
+		# Cancel payment, all should be unreconciled
+		pe.cancel()
+		# Invoice, back to unreconciled
+		residual, full_reconciled = get_reconcile_status(pi)
+		self.assertEqual(residual, -100)
+		self.assertEqual(full_reconciled, False)
+		# Payment, cancelled, so no residual also
+		residual, full_reconciled = get_reconcile_status(pe)
+		self.assertEqual(residual, 0)
+		self.assertEqual(full_reconciled, False)
+
+	def test_delete_partial_reoncile_entry_to_unreconcile(self):
+		# Create PI with amount 100
+		pi = make_purchase_invoice(rate=100)
+		# Create PE with amount 100
+		pe = make_payment_entry(amount=100)
+		# Reconcile creditors
+		gl_entries = get_gl_entries_by_vouchers([pi.name, pe.name])
+		reconcile_gl_entries(gl_entries)
+		# Test that residuals become zero
+		residual, full_reconciled = get_reconcile_status(pi)
+		self.assertEqual(residual, 0)
+		self.assertEqual(full_reconciled, True)
+		residual, full_reconciled = get_reconcile_status(pe)
+		self.assertEqual(residual, 0)
+		self.assertEqual(full_reconciled, True)
+		# Now, delete the partial reconcile entry, and test again.
+		pre = frappe.get_all(
+			"Partial Reconcile Entry",
+			filters={"debit_voucher": pe.name, "credit_voucher": pi.name},
+			pluck="name",
+		)
+		frappe.get_doc("Partial Reconcile Entry", pre[0]).delete()
+		# They will be like never been reconciled
+		residual, full_reconciled = get_reconcile_status(pi)
+		self.assertEqual(residual, -100)
+		self.assertEqual(full_reconciled, False)
+		residual, full_reconciled = get_reconcile_status(pe)
+		self.assertEqual(residual, 100)
+		self.assertEqual(full_reconciled, False)
 
 
 def make_purchase_invoice(**args):
@@ -162,29 +232,15 @@ def make_payment_entry(**args):
 	return pe
 
 
-def check_gl_entries(
-	doc,
-	voucher,
-	expected_gle,
-):
+def get_reconcile_status(voucher):
 	gl_entries = frappe.db.sql(
-		"""select account, debit, credit, residual, full_reconcile_number
+		"""select sum(residual) as residual, min(full_reconcile_number) as reconciled 
 		from `tabGL Entry`
-		where voucher_type=%s and voucher_no=%s
-		order by posting_date asc, account asc""",
+		where voucher_type=%s and voucher_no=%s""",
 		(
 			voucher.doctype,
 			voucher.name,
 		),
 		as_dict=1,
 	)
-	doc.assertTrue(gl_entries)
-	for i, gle in enumerate(gl_entries):
-		doc.assertEqual(expected_gle[i][0], gle.account)
-		doc.assertEqual(expected_gle[i][1], gle.debit)
-		doc.assertEqual(expected_gle[i][2], gle.credit)
-		doc.assertEqual(expected_gle[i][3], gle.residual)
-		if expected_gle[i][4]:
-			doc.assertTrue(gle.full_reconcile_number)
-		else:
-			doc.assertFalse(gle.full_reconcile_number)
+	return (gl_entries[0]["residual"], gl_entries[0]["reconciled"] and True or False)
