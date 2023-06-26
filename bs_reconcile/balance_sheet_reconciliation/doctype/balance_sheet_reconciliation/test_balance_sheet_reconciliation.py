@@ -2,10 +2,11 @@
 # See license.txt
 
 import frappe
-from frappe.utils import today
 from frappe.tests.utils import FrappeTestCase
-from bs_reconcile.balance_sheet_reconciliation.utils import reconcile_gl_entries
-from bs_reconcile.balance_sheet_reconciliation.utils import get_gl_entries_by_vouchers
+from frappe.utils import today
+
+from bs_reconcile.balance_sheet_reconciliation.utils import (
+    get_gl_entries_by_vouchers, reconcile_gl_entries)
 
 
 class TestBalanceSheetReconciliation(FrappeTestCase):
@@ -18,7 +19,7 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 
 	def tearDown(self):
 		frappe.set_user("Administrator")
-	
+
 	def test_simple_full_reconcile(self):
 		"""
 		Fulle reconcile simple 1 AR and 1 AP with equal amount = 100
@@ -100,10 +101,9 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 		pi_4 = make_purchase_invoice(rate=40)
 		pe_1 = make_payment_entry(amount=10)
 		pe_2 = make_payment_entry(amount=90)
-		gl_entries = get_gl_entries_by_vouchers([
-			pi_1.name, pi_2.name, pi_3.name, pi_4.name,
-			pe_1.name, pe_2.name
-		])
+		gl_entries = get_gl_entries_by_vouchers(
+			[pi_1.name, pi_2.name, pi_3.name, pi_4.name, pe_1.name, pe_2.name]
+		)
 		reconcile_gl_entries(gl_entries)
 		# Test with pi_3, and p2_2, both should have fully reconiled
 		expected_gle = [
@@ -117,25 +117,13 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 		]
 		check_gl_entries(self, pe_2, expected_gle)
 
-	# def test_payment_reconciliation_to_reconcile(self):
-	# 	pass
-	
-	# def test_auto_reconcile_invoice_payment(self):
-	# 	pass
-
-	# def test_cancel_voucher_to_unreconcile(self):
-	# 	pass
-
-	# def test_delete_partial_reoncile_entry_to_unreconcile(self):
-	# 	pass
-
 
 def make_purchase_invoice(**args):
 	pi = frappe.new_doc("Purchase Invoice")
 	args = frappe._dict(args)
 	pi.posting_date = today()
 	pi.company = args.company or "_Test Company"
-	pi.supplier = args.supplier or "_Test Supplier" # Creditors - _TC
+	pi.supplier = args.supplier or "_Test Supplier"  # Creditors - _TC
 	pi.currency = "INR"
 	pi.append(
 		"items",
@@ -151,6 +139,7 @@ def make_purchase_invoice(**args):
 	if not args.do_not_submit:
 		pi.submit()
 	return pi
+
 
 def make_payment_entry(**args):
 	pe = frappe.new_doc("Payment Entry")
@@ -173,13 +162,20 @@ def make_payment_entry(**args):
 	return pe
 
 
-def check_gl_entries(doc, voucher, expected_gle,):
+def check_gl_entries(
+	doc,
+	voucher,
+	expected_gle,
+):
 	gl_entries = frappe.db.sql(
 		"""select account, debit, credit, residual, full_reconcile_number
 		from `tabGL Entry`
 		where voucher_type=%s and voucher_no=%s
 		order by posting_date asc, account asc""",
-		(voucher.doctype, voucher.name,),
+		(
+			voucher.doctype,
+			voucher.name,
+		),
 		as_dict=1,
 	)
 	doc.assertTrue(gl_entries)

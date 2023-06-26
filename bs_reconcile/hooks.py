@@ -9,22 +9,22 @@ app_license = "MIT"
 required_apps = ["erpnext"]
 
 fixtures = [
-    {
-        "doctype": "Custom Field",
-        "filters": [
-            [
-                "name",
-                "in",
-                (
-                    "Account-is_reconcile",
-                    "GL Entry-full_reconcile_number",
-                    "GL Entry-residual",
-                    "GL Entry-is_reconcile",
-                    "GL Entry-section_break_qneej",
-                )
-            ]
-        ]
-    }
+	{
+		"doctype": "Custom Field",
+		"filters": [
+			[
+				"name",
+				"in",
+				(
+					"Account-is_reconcile",
+					"GL Entry-full_reconcile_number",
+					"GL Entry-residual",
+					"GL Entry-is_reconcile",
+					"GL Entry-section_break_qneej",
+				),
+			]
+		],
+	}
 ]
 
 
@@ -51,13 +51,16 @@ fixtures = [
 
 # monkey patch
 import erpnext.accounts.general_ledger
+
 import bs_reconcile.overrides.general_ledger
 
-erpnext.accounts.general_ledger.set_as_cancel = bs_reconcile.overrides.general_ledger.set_as_cancel
+erpnext.accounts.general_ledger.set_as_cancel = (
+	bs_reconcile.overrides.general_ledger.set_as_cancel
+)
 
 # include js in doctype views
-doctype_js = {"GL Entry" : "public/js/gl_entry.js"}
-doctype_list_js = {"GL Entry" : "public/js/gl_entry_list.js"}
+doctype_js = {"GL Entry": "public/js/gl_entry.js"}
+doctype_list_js = {"GL Entry": "public/js/gl_entry_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
@@ -69,7 +72,7 @@ doctype_list_js = {"GL Entry" : "public/js/gl_entry_list.js"}
 
 # website user home page (by Role)
 # role_home_page = {
-#	"Role": "home_page"
+# 	"Role": "home_page"
 # }
 
 # Generators
@@ -83,8 +86,8 @@ doctype_list_js = {"GL Entry" : "public/js/gl_entry_list.js"}
 
 # add methods and filters to jinja environment
 # jinja = {
-#	"methods": "bs_reconcile.utils.jinja_methods",
-#	"filters": "bs_reconcile.utils.jinja_filters"
+# 	"methods": "bs_reconcile.utils.jinja_methods",
+# 	"filters": "bs_reconcile.utils.jinja_filters"
 # }
 
 # Installation
@@ -110,11 +113,11 @@ doctype_list_js = {"GL Entry" : "public/js/gl_entry_list.js"}
 # Permissions evaluated in scripted ways
 
 # permission_query_conditions = {
-#	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
+# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
 # }
 #
 # has_permission = {
-#	"Event": "frappe.desk.doctype.event.event.has_permission",
+# 	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
 
 # DocType Class
@@ -122,7 +125,7 @@ doctype_list_js = {"GL Entry" : "public/js/gl_entry_list.js"}
 # Override standard doctype classes
 
 override_doctype_class = {
-    "Payment Reconciliation": "bs_reconcile.overrides.payment_reconciliation.BSPaymentReconciliation",
+	"Payment Reconciliation": "bs_reconcile.overrides.payment_reconciliation.BSPaymentReconciliation",
 }
 
 # Document Events
@@ -130,30 +133,30 @@ override_doctype_class = {
 # Hook on document methods and events
 
 doc_events = {
-    "GL Entry": {
-        "after_insert": "bs_reconcile.overrides.gl_entry.bs_reconcile",
-    },
+	"GL Entry": {
+		"after_insert": "bs_reconcile.overrides.gl_entry.bs_reconcile",
+	},
 }
 
 # Scheduled Tasks
 # ---------------
 
 # scheduler_events = {
-#	"all": [
-#		"bs_reconcile.tasks.all"
-#	],
-#	"daily": [
-#		"bs_reconcile.tasks.daily"
-#	],
-#	"hourly": [
-#		"bs_reconcile.tasks.hourly"
-#	],
-#	"weekly": [
-#		"bs_reconcile.tasks.weekly"
-#	],
-#	"monthly": [
-#		"bs_reconcile.tasks.monthly"
-#	],
+# 	"all": [
+# 		"bs_reconcile.tasks.all"
+# 	],
+# 	"daily": [
+# 		"bs_reconcile.tasks.daily"
+# 	],
+# 	"hourly": [
+# 		"bs_reconcile.tasks.hourly"
+# 	],
+# 	"weekly": [
+# 		"bs_reconcile.tasks.weekly"
+# 	],
+# 	"monthly": [
+# 		"bs_reconcile.tasks.monthly"
+# 	],
 # }
 
 # Testing
@@ -165,14 +168,14 @@ doc_events = {
 # ------------------------------
 #
 # override_whitelisted_methods = {
-#	"frappe.desk.doctype.event.event.get_events": "bs_reconcile.event.get_events"
+# 	"frappe.desk.doctype.event.event.get_events": "bs_reconcile.event.get_events"
 # }
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
 # override_doctype_dashboards = {
-#	"Task": "bs_reconcile.task.get_dashboard_data"
+# 	"Task": "bs_reconcile.task.get_dashboard_data"
 # }
 
 # exempt linked doctypes from being automatically cancelled
@@ -198,29 +201,29 @@ doc_events = {
 # --------------------
 
 # user_data_fields = [
-#	{
-#		"doctype": "{doctype_1}",
-#		"filter_by": "{filter_by}",
-#		"redact_fields": ["{field_1}", "{field_2}"],
-#		"partial": 1,
-#	},
-#	{
-#		"doctype": "{doctype_2}",
-#		"filter_by": "{filter_by}",
-#		"partial": 1,
-#	},
-#	{
-#		"doctype": "{doctype_3}",
-#		"strict": False,
-#	},
-#	{
-#		"doctype": "{doctype_4}"
-#	}
+# 	{
+# 		"doctype": "{doctype_1}",
+# 		"filter_by": "{filter_by}",
+# 		"redact_fields": ["{field_1}", "{field_2}"],
+# 		"partial": 1,
+# 	},
+# 	{
+# 		"doctype": "{doctype_2}",
+# 		"filter_by": "{filter_by}",
+# 		"partial": 1,
+# 	},
+# 	{
+# 		"doctype": "{doctype_3}",
+# 		"strict": False,
+# 	},
+# 	{
+# 		"doctype": "{doctype_4}"
+# 	}
 # ]
 
 # Authentication and authorization
 # --------------------------------
 
 # auth_hooks = [
-#	"bs_reconcile.auth.validate"
+# 	"bs_reconcile.auth.validate"
 # ]
