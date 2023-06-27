@@ -31,14 +31,18 @@
    "options": "GL Entry"
   },
   {
+   "columns": 1,
    "fieldname": "amount",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "Amount Reconciled",
    "options": "Company:company:default_currency"
   },
   {
+   "columns": 1,
    "fieldname": "full_reconcile_number",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Full Reconcile Number",
    "options": "Full Reconcile Number"
   },
@@ -47,15 +51,19 @@
    "fieldtype": "Column Break"
   },
   {
+   "columns": 2,
    "fetch_from": "debit_gl_entry.voucher_no",
    "fieldname": "debit_voucher",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Debit Voucher"
   },
   {
+   "columns": 2,
    "fetch_from": "credit_gl_entry.voucher_no",
    "fieldname": "credit_voucher",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Credit Voucher"
   },
   {
@@ -69,7 +77,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-06-21 16:17:23.196395",
+ "modified": "2023-06-27 16:25:06.844818",
  "modified_by": "Administrator",
  "module": "Balance Sheet Reconciliation",
  "name": "Partial Reconcile Entry",

@@ -22,9 +22,13 @@
   {
    "link_doctype": "GL Entry",
    "link_fieldname": "full_reconcile_number"
+  },
+  {
+   "link_doctype": "Partial Reconcile Entry",
+   "link_fieldname": "full_reconcile_number"
   }
  ],
- "modified": "2023-06-20 22:27:48.508869",
+ "modified": "2023-06-27 13:15:41.794055",
  "modified_by": "Administrator",
  "module": "Balance Sheet Reconciliation",
  "name": "Full Reconcile Number",
@@ -33,6 +37,7 @@
  "permissions": [
   {
    "create": 1,
+   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,

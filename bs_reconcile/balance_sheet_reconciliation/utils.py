@@ -32,29 +32,33 @@ def create_partial_reconcile_entries(gl_entries, allocated_amount=False):
 			)
 			pre = frappe.get_doc(doc)
 			pre.insert(ignore_permissions=True)
+			frappe.db.commit()
 			update_gl_residual(dr)
 			update_gl_residual(cr)
 
 
 def get_all_related_gl_entries(gl_list):
 	prev_gl_list = gl_list.copy()
-	pre_debit_entries = frappe.db.get_all(
+	pre_dr = frappe.db.get_all(
 		"Partial Reconcile Entry",
-		fields=["name", "debit_gl_entry"],
+		fields=["name", "debit_gl_entry", "full_reconcile_number"],
 		filters=[dict(credit_gl_entry=("in", gl_list))],
 	)
-	gl_list += [x["debit_gl_entry"] for x in pre_debit_entries]
-	pre_credit_entries = frappe.db.get_all(
+	gl_list += [x["debit_gl_entry"] for x in pre_dr]
+	pre_cr = frappe.db.get_all(
 		"Partial Reconcile Entry",
-		fields=["name", "credit_gl_entry"],
+		fields=["name", "credit_gl_entry", "full_reconcile_number"],
 		filters=[dict(debit_gl_entry=("in", gl_list))],
 	)
-	gl_list += [x["credit_gl_entry"] for x in pre_credit_entries]
+	gl_list += [x["credit_gl_entry"] for x in pre_cr]
 	gl_list = list(set(gl_list))
 	if len(prev_gl_list) < len(gl_list):
 		get_all_related_gl_entries(gl_list)
-	pre_list = [x["name"] for x in pre_debit_entries + pre_credit_entries]
-	return (gl_list, pre_list)
+	pre_list = [x["name"] for x in pre_dr + pre_cr]
+	full_list = list(
+		{x["full_reconcile_number"] for x in pre_dr + pre_cr if x["full_reconcile_number"]}
+	)
+	return (gl_list, pre_list, full_list)
 
 
 def get_gl_entries_by_vouchers(vouchers, is_cancelled=0):
@@ -74,7 +78,7 @@ def get_gl_entries_by_vouchers(vouchers, is_cancelled=0):
 def mark_full_reconcile(gl_to_reconcile):
 	# Recursive scan to get all related gl from partial reconcile entries
 	gl_list = list(x.name for x in gl_to_reconcile)
-	gl_list, pre_list = get_all_related_gl_entries(gl_list)
+	gl_list, pre_list, full_list = get_all_related_gl_entries(gl_list)
 	# If all residual are zero we can mark them as Full Reconciled
 	glt = qb.DocType("GL Entry")
 	residual = (
@@ -134,7 +138,9 @@ def reconcile_gl(gl_to_reconcile, allocated_amount=False):
 	"""
 	accounts = list({x.account for x in gl_to_reconcile})
 	for a in accounts:
-		gl_entries = list(filter(lambda x: x.account == a, gl_to_reconcile))
+		gl_entries = list(
+			filter(lambda x: x.account == a and x.is_reconcile == 1, gl_to_reconcile)
+		)
 		create_partial_reconcile_entries(gl_entries, allocated_amount)
 		# If all residuals are zero, mark as fully reconciled
 		if {x.residual for x in gl_entries} == {0}:
@@ -144,7 +150,7 @@ def reconcile_gl(gl_to_reconcile, allocated_amount=False):
 def unreconcile_gl(gl_to_unreconcile):
 	# remove full reconcile number everywhere
 	gl_list = [x["name"] for x in gl_to_unreconcile]
-	gl_list, pre_list = get_all_related_gl_entries(gl_list)
+	gl_list, pre_list, full_list = get_all_related_gl_entries(gl_list)
 	# Unset full_reconcile_number for GL Entry and Partial Reconcile Entry
 	if gl_list:
 		tab = qb.DocType("GL Entry")
@@ -156,9 +162,9 @@ def unreconcile_gl(gl_to_unreconcile):
 		qb.update(tab).set(tab.full_reconcile_number, None).where(
 			tab.name.isin(pre_list)
 		).run()
-	# Delete related partial reconcile entries
+	# Delete related entries
 	gl_list = [x.name for x in gl_to_unreconcile]
-	pre_list = frappe.get_all(
+	pre_docs = frappe.get_all(
 		"Partial Reconcile Entry",
 		fields=["*"],
 		or_filters=[
@@ -166,13 +172,16 @@ def unreconcile_gl(gl_to_unreconcile):
 			dict(credit_gl_entry=("in", gl_list)),
 		],
 	)
-	if pre_list:
+	if full_list:
+		tab = qb.DocType("Full Reconcile Number")
+		qb.from_(tab).delete().where(tab.name.isin(full_list)).run()
+	if pre_docs:
 		tab = qb.DocType("Partial Reconcile Entry")
-		qb.from_(tab).delete().where(tab.name.isin([x.name for x in pre_list])).run()
+		qb.from_(tab).delete().where(tab.name.isin([x.name for x in pre_docs])).run()
 	# Finally, update the gl residual again
-	for pre in pre_list:
-		update_gl_residual(frappe.get_doc("GL Entry", pre.debit_gl_entry))
-		update_gl_residual(frappe.get_doc("GL Entry", pre.credit_gl_entry))
+	for doc in pre_docs:
+		update_gl_residual(frappe.get_doc("GL Entry", doc.debit_gl_entry))
+		update_gl_residual(frappe.get_doc("GL Entry", doc.credit_gl_entry))
 
 
 def update_gl_residual(gl):
