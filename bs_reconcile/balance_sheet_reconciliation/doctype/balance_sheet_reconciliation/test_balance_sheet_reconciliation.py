@@ -28,22 +28,22 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 		pi = make_purchase_invoice(rate=100)
 		residual, full_reconciled = get_reconcile_status(pi)
 		self.assertEqual(residual, -100)
-		self.assertEqual(full_reconciled, False)
+		self.assertFalse(full_reconciled)
 		# Create PE with amount 100
 		pe = make_payment_entry(amount=100)
 		residual, full_reconciled = get_reconcile_status(pe)
 		self.assertEqual(residual, 100)
-		self.assertEqual(full_reconciled, False)
+		self.assertFalse(full_reconciled)
 		# Reconcile creditors
 		gl_entries = get_gl_entries_by_vouchers([pi.name, pe.name])
 		reconcile_gl_entries(gl_entries)
 		# Test that residuals become zero
 		residual, full_reconciled = get_reconcile_status(pi)
 		self.assertEqual(residual, 0)
-		self.assertEqual(full_reconciled, True)
+		self.assertTrue(full_reconciled)
 		residual, full_reconciled = get_reconcile_status(pe)
 		self.assertEqual(residual, 0)
-		self.assertEqual(full_reconciled, True)
+		self.assertTrue(full_reconciled)
 
 	def test_simple_partial_reconcile_to_full(self):
 		"""
@@ -59,11 +59,11 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 		# Test invoice status
 		residual, full_reconciled = get_reconcile_status(pi)
 		self.assertEqual(residual, -60)
-		self.assertEqual(full_reconciled, False)
+		self.assertFalse(full_reconciled)
 		# Test payment status
 		residual, full_reconciled = get_reconcile_status(pe)
 		self.assertEqual(residual, 0)
-		self.assertEqual(full_reconciled, False)
+		self.assertFalse(full_reconciled)
 		# Create PE with amount 60
 		pe = make_payment_entry(amount=60)
 		# 2nd Reconcile (Full)
@@ -72,11 +72,11 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 		# Test 2nd invoice status
 		residual, full_reconciled = get_reconcile_status(pi)
 		self.assertEqual(residual, 0)
-		self.assertEqual(full_reconciled, True)
+		self.assertTrue(full_reconciled)
 		# Test payment status
 		residual, full_reconciled = get_reconcile_status(pe)
 		self.assertEqual(residual, 0)
-		self.assertEqual(full_reconciled, True)
+		self.assertTrue(full_reconciled)
 
 	def test_complex_partial_to_full_reconcile(self):
 		"""
@@ -96,7 +96,7 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 		for doc in [pi_1, pi_2, pi_3, pe_1, pe_2]:
 			residual, full_reconciled = get_reconcile_status(doc)
 			self.assertEqual(residual, 0)
-			self.assertEqual(full_reconciled, True)
+			self.assertTrue(full_reconciled)
 
 	def test_auto_reconcile_invoice_payment(self):
 		"""
@@ -124,7 +124,7 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 		for doc in [pi_1, pi_2, pe]:
 			residual, full_reconciled = get_reconcile_status(doc)
 			self.assertEqual(residual, 0)
-			self.assertEqual(full_reconciled, True)
+			self.assertTrue(full_reconciled)
 
 	def test_cancel_voucher_to_unreconcile(self):
 		"""
@@ -145,17 +145,17 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 		for doc in [pi, pe]:
 			residual, full_reconciled = get_reconcile_status(doc)
 			self.assertEqual(residual, 0)
-			self.assertEqual(full_reconciled, True)
+			self.assertTrue(full_reconciled)
 		# Cancel payment, all should be unreconciled
 		pe.cancel()
 		# Invoice, back to unreconciled
 		residual, full_reconciled = get_reconcile_status(pi)
 		self.assertEqual(residual, -100)
-		self.assertEqual(full_reconciled, False)
+		self.assertFalse(full_reconciled)
 		# Payment, cancelled, so no residual also
 		residual, full_reconciled = get_reconcile_status(pe)
 		self.assertEqual(residual, 0)
-		self.assertEqual(full_reconciled, False)
+		self.assertFalse(full_reconciled)
 
 	def test_delete_partial_reoncile_entry_to_unreconcile(self):
 		# Create PI with amount 100
@@ -168,10 +168,10 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 		# Test that residuals become zero
 		residual, full_reconciled = get_reconcile_status(pi)
 		self.assertEqual(residual, 0)
-		self.assertEqual(full_reconciled, True)
+		self.assertTrue(full_reconciled)
 		residual, full_reconciled = get_reconcile_status(pe)
 		self.assertEqual(residual, 0)
-		self.assertEqual(full_reconciled, True)
+		self.assertTrue(full_reconciled)
 		# Now, delete the partial reconcile entry, and test again.
 		pre = frappe.get_all(
 			"Partial Reconcile Entry",
@@ -182,10 +182,35 @@ class TestBalanceSheetReconciliation(FrappeTestCase):
 		# They will be like never been reconciled
 		residual, full_reconciled = get_reconcile_status(pi)
 		self.assertEqual(residual, -100)
-		self.assertEqual(full_reconciled, False)
+		self.assertFalse(full_reconciled)
 		residual, full_reconciled = get_reconcile_status(pe)
 		self.assertEqual(residual, 100)
-		self.assertEqual(full_reconciled, False)
+		self.assertFalse(full_reconciled)
+
+	def test_delete_full_reoncile_entry_to_unreconcile(self):
+		# Create PI with amount 100
+		pi = make_purchase_invoice(rate=100)
+		# Create PE with amount 100
+		pe = make_payment_entry(amount=100)
+		# Reconcile creditors
+		gl_entries = get_gl_entries_by_vouchers([pi.name, pe.name])
+		reconcile_gl_entries(gl_entries)
+		# Test that residuals become zero
+		residual, full_reconciled = get_reconcile_status(pi)
+		self.assertEqual(residual, 0)
+		self.assertTrue(full_reconciled)
+		residual, full_reconciled = get_reconcile_status(pe)
+		self.assertEqual(residual, 0)
+		self.assertTrue(full_reconciled)
+		# Now, delete the full reconcile number, and test again.
+		frappe.get_doc("Full Reconcile Number", full_reconciled).delete()
+		# They will be like never been reconciled
+		residual, full_reconciled = get_reconcile_status(pi)
+		self.assertEqual(residual, -100)
+		self.assertFalse(full_reconciled)
+		residual, full_reconciled = get_reconcile_status(pe)
+		self.assertEqual(residual, 100)
+		self.assertFalse(full_reconciled)
 
 
 def make_purchase_invoice(**args):
@@ -243,4 +268,4 @@ def get_reconcile_status(voucher):
 		),
 		as_dict=1,
 	)
-	return (gl_entries[0]["residual"], gl_entries[0]["reconciled"] and True or False)
+	return (gl_entries[0]["residual"], gl_entries[0]["reconciled"])
